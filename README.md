@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flash Fiction
+
+A lightweight creative writing app for flash fiction competitions. Users write short stories based on prompts, vote anonymously, and discover winners.
+
+## Features
+
+- **Timed Prompts**: Admin creates prompts with writing and voting deadlines
+- **Anonymous Submissions**: Stories are anonymous during voting
+- **One Vote Per User**: Each user gets one vote per prompt
+- **Winner Reveal**: Authors revealed after voting ends
+- **Real-time Word Count**: Live word counting with limit validation
+
+## Tech Stack
+
+- **Next.js 14** - App Router, Server Components
+- **Supabase** - PostgreSQL, Auth, Row Level Security
+- **Tailwind CSS** - Styling
+- **TypeScript** - Type safety
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and Install
+
+```bash
+git clone <your-repo>
+cd flash-fiction
+npm install
+```
+
+### 2. Set Up Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **SQL Editor** and run the migration file:
+   - Copy contents from `supabase/migrations/001_initial_schema.sql`
+   - Paste and run in the SQL Editor
+3. Go to **Settings > API** and copy your project URL and anon key
+
+### 3. Configure Environment Variables
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` with your Supabase credentials:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+### 4. Create an Admin User
+
+1. Sign up through the app at `/auth/signup`
+2. Go to Supabase Dashboard > **Authentication > Users**
+3. Click on your user, then **Edit User**
+4. Add to user metadata: `{"is_admin": true}`
+5. Save changes
+
+### 5. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Deploy to Vercel
 
-## Learn More
+1. Push your code to GitHub
+2. Import your repo at [vercel.com/new](https://vercel.com/new)
+3. Add environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy!
 
-To learn more about Next.js, take a look at the following resources:
+### Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── page.tsx           # Landing page
+│   ├── auth/              # Sign in/up pages
+│   ├── submit/            # Story submission
+│   ├── submissions/       # Voting gallery
+│   ├── results/           # Winner display
+│   └── admin/             # Admin panel
+├── components/            # React components
+├── lib/
+│   ├── supabase/          # Supabase clients
+│   └── utils.ts           # Helper functions
+└── types/
+    └── database.ts        # TypeScript types
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Prompt Lifecycle
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Upcoming**: Prompt is scheduled but writing hasn't started
+2. **Writing**: Users can submit their stories
+3. **Voting**: Submissions are anonymous, users vote for favorites
+4. **Results**: Winner announced, authors revealed
+
+## License
+
+MIT
