@@ -65,11 +65,9 @@ export default function SubmissionCard({
         </div>
 
         <div className="flex items-center gap-3">
-          {showAuthor && (
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {submission.vote_count} vote{submission.vote_count !== 1 ? 's' : ''}
-            </span>
-          )}
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {submission.vote_count} vote{submission.vote_count !== 1 ? 's' : ''}
+          </span>
           {canVote && !isOwnSubmission && (
             <VoteButton
               promptId={promptId}
