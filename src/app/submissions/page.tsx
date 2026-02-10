@@ -76,14 +76,7 @@ async function getVotingData() {
     author_email: undefined, // Anonymous during voting
   }))
 
-  // Randomize order so submissions don't always appear in creation order
-  const shuffled = [...submissionsWithVotes]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-  }
-
-  return { prompt, phase, user, submissions: shuffled, userVotedFor }
+  return { prompt, phase, user, submissions: submissionsWithVotes, userVotedFor }
 }
 
 export default async function SubmissionsPage() {

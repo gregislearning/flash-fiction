@@ -25,24 +25,21 @@ async function getResultsData() {
   // Get current user
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Get all submissions with user info
+  // Get all submissions (no user/email — authors stay anonymous after voting)
   const { data: submissionsData } = await supabase
     .from('submissions')
-    .select('*, user:user_id(email)')
+    .select('*')
     .eq('prompt_id', prompt.id)
     .order('created_at', { ascending: true })
 
-  type SubmissionWithUser = {
+  const submissions = (submissionsData || []) as Array<{
     id: string
     prompt_id: string
     user_id: string
     content: string
     word_count: number
     created_at: string
-    user: { email: string } | null
-  }
-
-  const submissions = (submissionsData || []) as SubmissionWithUser[]
+  }>
 
   // Get vote counts for each submission
   const { data: voteCounts } = await supabase
@@ -57,16 +54,11 @@ async function getResultsData() {
     voteCountMap.set(vote.submission_id, count + 1)
   })
 
-  // Add vote counts and author info to submissions
+  // Add vote counts; do not attach author_email — authors remain anonymous
   const submissionsWithVotes: SubmissionWithVotes[] = submissions.map((sub) => ({
-    id: sub.id,
-    prompt_id: sub.prompt_id,
-    user_id: sub.user_id,
-    content: sub.content,
-    word_count: sub.word_count,
-    created_at: sub.created_at,
+    ...sub,
     vote_count: voteCountMap.get(sub.id) || 0,
-    author_email: sub.user?.email || 'Anonymous',
+    author_email: undefined,
   }))
 
   // Sort by vote count (highest first)
@@ -120,7 +112,7 @@ export default async function ResultsPage() {
             Results
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
-            The votes are in! See who won.
+            The votes are in! See the results (authors stay anonymous).
           </p>
         </div>
 
@@ -152,7 +144,7 @@ export default async function ResultsPage() {
                   userVotedFor={null}
                   canVote={false}
                   isOwnSubmission={user?.id === submission.user_id}
-                  showAuthor={true}
+                  showAuthor={false}
                   isWinner={true}
                 />
               ))}
@@ -182,7 +174,7 @@ export default async function ResultsPage() {
                     userVotedFor={null}
                     canVote={false}
                     isOwnSubmission={user?.id === submission.user_id}
-                    showAuthor={true}
+                    showAuthor={false}
                   />
                 ))}
             </div>
