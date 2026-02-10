@@ -43,6 +43,12 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center gap-4">
+          <Link
+            href="/past"
+            className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+          >
+            Past
+          </Link>
           {loading ? (
             <div className="w-20 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
           ) : user ? (
