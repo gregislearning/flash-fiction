@@ -2,34 +2,65 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function SignIn() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const supabase = createClient()
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback?next=/auth/reset-password`
+        : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/auth/reset-password`
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
     })
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/')
-      router.refresh()
+      setSuccess(true)
+      setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                Check your email
+              </h1>
+              <p className="text-zinc-600 dark:text-zinc-400 mt-2">
+                We&apos;ve sent a password reset link to <strong>{email}</strong>.
+                Click the link to set a new password.
+              </p>
+            </div>
+
+            <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+              <Link
+                href="/auth/signin"
+                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              >
+                Back to sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -38,14 +69,15 @@ export default function SignIn() {
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-              Welcome Back
+              Forgot password?
             </h1>
             <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-              Sign in to continue writing
+              Enter your email and we&apos;ll send you a link to reset your
+              password.
             </p>
           </div>
 
-          <form onSubmit={handleSignIn} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
                 {error}
@@ -70,48 +102,22 @@ export default function SignIn() {
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                >
-                  Password
-                </label>
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                placeholder="••••••••"
-              />
-            </div>
-
             <button
               type="submit"
               disabled={loading}
               className="w-full py-3 px-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Sending...' : 'Send reset link'}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
-            Don&apos;t have an account?{' '}
+            Remember your password?{' '}
             <Link
-              href="/auth/signup"
+              href="/auth/signin"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </div>
