@@ -25,7 +25,7 @@ async function getResultsData() {
   // Get current user
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Get all submissions (no user/email — authors stay anonymous after voting)
+  // Get all submissions for this prompt
   const { data: submissionsData } = await supabase
     .from('submissions')
     .select('*')
@@ -38,6 +38,8 @@ async function getResultsData() {
     user_id: string
     content: string
     word_count: number
+    claimed: boolean
+    author_email: string | null
     created_at: string
   }>
 
@@ -54,11 +56,9 @@ async function getResultsData() {
     voteCountMap.set(vote.submission_id, count + 1)
   })
 
-  // Add vote counts; do not attach author_email — authors remain anonymous
   const submissionsWithVotes: SubmissionWithVotes[] = submissions.map((sub) => ({
     ...sub,
     vote_count: voteCountMap.get(sub.id) || 0,
-    author_email: undefined,
   }))
 
   // Sort by vote count (highest first)
@@ -112,7 +112,7 @@ export default async function ResultsPage() {
             Results
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
-            The votes are in! See the results (authors stay anonymous).
+            The votes are in! Authors may claim their submissions below.
           </p>
         </div>
 
@@ -143,8 +143,8 @@ export default async function ResultsPage() {
                   promptId={prompt.id}
                   userVotedFor={null}
                   canVote={false}
+                  canClaim={true}
                   isOwnSubmission={user?.id === submission.user_id}
-                  showAuthor={false}
                   isWinner={true}
                 />
               ))}
@@ -173,8 +173,8 @@ export default async function ResultsPage() {
                     promptId={prompt.id}
                     userVotedFor={null}
                     canVote={false}
+                    canClaim={true}
                     isOwnSubmission={user?.id === submission.user_id}
-                    showAuthor={false}
                   />
                 ))}
             </div>

@@ -69,11 +69,9 @@ async function getVotingData() {
     voteCountMap.set(vote.submission_id, count + 1)
   })
 
-  // Add vote counts to submissions (but don't show author during voting)
   const submissionsWithVotes: SubmissionWithVotes[] = submissions.map((sub) => ({
     ...sub,
     vote_count: voteCountMap.get(sub.id) || 0,
-    author_email: undefined, // Anonymous during voting
   }))
 
   return { prompt, phase, user, submissions: submissionsWithVotes, userVotedFor }
@@ -184,8 +182,8 @@ export default async function SubmissionsPage() {
                 promptId={prompt.id}
                 userVotedFor={userVotedFor}
                 canVote={!!user}
+                canClaim={false}
                 isOwnSubmission={user?.id === submission.user_id}
-                showAuthor={false}
               />
             ))}
           </div>

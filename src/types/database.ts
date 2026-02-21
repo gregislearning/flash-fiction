@@ -48,6 +48,8 @@ export interface Database {
           user_id: string
           content: string
           word_count: number
+          claimed: boolean
+          author_email: string | null
           created_at: string
         }
         Insert: {
@@ -56,6 +58,8 @@ export interface Database {
           user_id: string
           content: string
           word_count: number
+          claimed?: boolean
+          author_email?: string | null
           created_at?: string
         }
         Update: {
@@ -64,6 +68,8 @@ export interface Database {
           user_id?: string
           content?: string
           word_count?: number
+          claimed?: boolean
+          author_email?: string | null
           created_at?: string
         }
       }
@@ -102,5 +108,4 @@ export type PromptPhase = 'upcoming' | 'writing' | 'voting' | 'results'
 
 export interface SubmissionWithVotes extends Submission {
   vote_count: number
-  author_email?: string
 }

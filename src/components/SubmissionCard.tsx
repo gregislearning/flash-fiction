@@ -1,13 +1,14 @@
 import { SubmissionWithVotes } from '@/types/database'
 import VoteButton from './VoteButton'
+import ClaimButton from './ClaimButton'
 
 interface SubmissionCardProps {
   submission: SubmissionWithVotes
   promptId: string
   userVotedFor: string | null
   canVote: boolean
+  canClaim: boolean
   isOwnSubmission: boolean
-  showAuthor: boolean
   isWinner?: boolean
 }
 
@@ -16,8 +17,8 @@ export default function SubmissionCard({
   promptId,
   userVotedFor,
   canVote,
+  canClaim,
   isOwnSubmission,
-  showAuthor,
   isWinner = false,
 }: SubmissionCardProps) {
   const hasVoted = userVotedFor === submission.id
@@ -57,7 +58,7 @@ export default function SubmissionCard({
           <span className="text-sm text-zinc-500 dark:text-zinc-400">
             {submission.word_count} words
           </span>
-          {showAuthor && submission.author_email && (
+          {submission.claimed && submission.author_email && (
             <span className="text-sm text-zinc-600 dark:text-zinc-400">
               by {submission.author_email}
             </span>
@@ -80,6 +81,12 @@ export default function SubmissionCard({
             <span className="text-sm text-zinc-400 dark:text-zinc-500 italic">
               Can&apos;t vote for yourself
             </span>
+          )}
+          {canClaim && isOwnSubmission && (
+            <ClaimButton
+              submissionId={submission.id}
+              claimed={submission.claimed}
+            />
           )}
         </div>
       </div>

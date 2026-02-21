@@ -36,6 +36,8 @@ async function getPastPromptData(promptId: string) {
     user_id: string
     content: string
     word_count: number
+    claimed: boolean
+    author_email: string | null
     created_at: string
   }>
 
@@ -53,7 +55,6 @@ async function getPastPromptData(promptId: string) {
   const submissionsWithVotes: SubmissionWithVotes[] = submissions.map((sub) => ({
     ...sub,
     vote_count: voteCountMap.get(sub.id) || 0,
-    author_email: undefined,
   }))
 
   submissionsWithVotes.sort((a, b) => b.vote_count - a.vote_count)
@@ -97,7 +98,7 @@ export default async function PastPromptPage({
             {prompt.title}
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Past prompt — authors stay anonymous.
+            Past prompt — authors may claim their submissions below.
           </p>
         </div>
 
@@ -125,8 +126,8 @@ export default async function PastPromptPage({
                   promptId={prompt.id}
                   userVotedFor={null}
                   canVote={false}
+                  canClaim={true}
                   isOwnSubmission={user?.id === submission.user_id}
-                  showAuthor={false}
                   isWinner={true}
                 />
               ))}
@@ -155,8 +156,8 @@ export default async function PastPromptPage({
                     promptId={prompt.id}
                     userVotedFor={null}
                     canVote={false}
+                    canClaim={true}
                     isOwnSubmission={user?.id === submission.user_id}
-                    showAuthor={false}
                   />
                 ))}
             </div>
