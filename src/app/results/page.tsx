@@ -141,7 +141,7 @@ export default async function ResultsPage() {
                   key={submission.id}
                   submission={submission}
                   promptId={prompt.id}
-                  userVotedFor={null}
+                  userVotedFor={[]}
                   canVote={false}
                   canClaim={true}
                   isOwnSubmission={user?.id === submission.user_id}
@@ -171,7 +171,7 @@ export default async function ResultsPage() {
                     key={submission.id}
                     submission={submission}
                     promptId={prompt.id}
-                    userVotedFor={null}
+                    userVotedFor={[]}
                     canVote={false}
                     canClaim={true}
                     isOwnSubmission={user?.id === submission.user_id}

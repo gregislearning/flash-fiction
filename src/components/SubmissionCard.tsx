@@ -5,7 +5,7 @@ import ClaimButton from './ClaimButton'
 interface SubmissionCardProps {
   submission: SubmissionWithVotes
   promptId: string
-  userVotedFor: string | null
+  userVotedFor: string[]
   canVote: boolean
   canClaim: boolean
   isOwnSubmission: boolean
@@ -21,13 +21,15 @@ export default function SubmissionCard({
   isOwnSubmission,
   isWinner = false,
 }: SubmissionCardProps) {
-  const hasVoted = userVotedFor === submission.id
+  const hasVoted = userVotedFor.includes(submission.id)
 
   return (
     <article
-      className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 border ${
+      className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 border transition-all ${
         isWinner
           ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/20'
+          : hasVoted
+          ? 'border-purple-400 dark:border-purple-500 ring-2 ring-purple-400/20'
           : 'border-zinc-200 dark:border-zinc-800'
       }`}
     >
@@ -35,6 +37,14 @@ export default function SubmissionCard({
         <div className="flex items-center gap-2 mb-4">
           <span className="px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
             Winner
+          </span>
+        </div>
+      )}
+
+      {hasVoted && (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+            Your Vote
           </span>
         </div>
       )}
@@ -74,7 +84,8 @@ export default function SubmissionCard({
               promptId={promptId}
               submissionId={submission.id}
               hasVoted={hasVoted}
-              disabled={userVotedFor !== null && !hasVoted}
+              disabled={userVotedFor.length >= 2 && !hasVoted}
+              votesUsed={userVotedFor.length}
             />
           )}
           {canVote && isOwnSubmission && (

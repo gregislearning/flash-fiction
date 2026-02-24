@@ -22,13 +22,13 @@ async function getVotingData() {
   const prompt = promptData as Prompt | null
 
   if (!prompt) {
-    return { prompt: null, phase: null, user: null, submissions: [], userVotedFor: null }
+    return { prompt: null, phase: null, user: null, submissions: [], userVotedFor: [] }
   }
 
   const phase = getPromptPhase(prompt)
 
   if (phase === 'upcoming' || phase === 'writing') {
-    return { prompt, phase, user: null, submissions: [], userVotedFor: null }
+    return { prompt, phase, user: null, submissions: [], userVotedFor: [] }
   }
 
   // Get current user
@@ -49,17 +49,16 @@ async function getVotingData() {
     .select('submission_id')
     .eq('prompt_id', prompt.id)
 
-  // Get user's vote if any
-  let userVotedFor: string | null = null
+  // Get user's votes if any
+  let userVotedFor: string[] = []
   if (user) {
-    const { data: userVote } = await supabase
+    const { data: userVotes } = await supabase
       .from('votes')
       .select('submission_id')
       .eq('prompt_id', prompt.id)
       .eq('user_id', user.id)
-      .single()
     
-    userVotedFor = (userVote as { submission_id: string } | null)?.submission_id || null
+    userVotedFor = (userVotes as { submission_id: string }[] | null)?.map((v) => v.submission_id) || []
   }
 
   // Calculate vote counts
@@ -149,9 +148,9 @@ export default async function SubmissionsPage() {
               <Link href="/auth/signin" className="underline">Sign in</Link> to vote
             </p>
           )}
-          {user && userVotedFor && (
+          {user && userVotedFor.length > 0 && (
             <p className="mt-4 text-sm text-green-600 dark:text-green-400">
-              You&apos;ve cast your vote! You can change it until voting ends.
+              You&apos;ve used {userVotedFor.length} of 2 votes. You can change them until voting ends.
             </p>
           )}
         </div>
