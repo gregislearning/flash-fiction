@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { sortSubmissionsForVotingPhase } from '@/lib/voting-submission-order'
 import { getPromptPhase } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import SubmissionCard from '@/components/SubmissionCard'
@@ -39,9 +40,12 @@ async function getVotingData() {
     .from('submissions')
     .select('*')
     .eq('prompt_id', prompt.id)
-    .order('created_at', { ascending: true })
 
-  const submissions = (submissionsData || []) as Submission[]
+  const submissionsRaw = (submissionsData || []) as Submission[]
+  const submissions =
+    phase === 'voting'
+      ? sortSubmissionsForVotingPhase(submissionsRaw, prompt.id)
+      : submissionsRaw
 
   // Get vote counts for each submission
   const { data: voteCounts } = await supabase

@@ -4,6 +4,13 @@ ALTER TABLE votes DROP CONSTRAINT votes_prompt_id_user_id_key;
 -- Add new unique constraint (prevent voting for same submission twice)
 ALTER TABLE votes ADD CONSTRAINT votes_prompt_id_user_id_submission_id_key UNIQUE(prompt_id, user_id, submission_id);
 
+-- SECURITY DEFINER function to count user votes without triggering RLS recursion
+CREATE OR REPLACE FUNCTION get_user_vote_count_for_prompt(p_prompt_id UUID, p_user_id UUID)
+RETURNS INTEGER AS $$
+  SELECT COUNT(*)::INTEGER FROM votes
+  WHERE prompt_id = p_prompt_id AND user_id = p_user_id;
+$$ LANGUAGE SQL SECURITY DEFINER;
+
 -- Drop the old insert policy
 DROP POLICY "Authenticated users can vote during voting phase" ON votes;
 
@@ -27,5 +34,5 @@ CREATE POLICY "Authenticated users can vote for up to 2 submissions"
       AND submissions.user_id = auth.uid()
     ) AND
     -- Limit to 2 votes per user per prompt
-    (SELECT COUNT(*) FROM votes v WHERE v.prompt_id = prompt_id AND v.user_id = auth.uid()) < 2
+    get_user_vote_count_for_prompt(prompt_id, auth.uid()) < 2
   );
