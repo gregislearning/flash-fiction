@@ -25,6 +25,7 @@ export default function SubmissionCard({
   const hasVoted = userVotedFor.includes(submission.id)
 
   return (
+    <>
     <article
       className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 border transition-all ${
         isWinner
@@ -103,7 +104,8 @@ export default function SubmissionCard({
         </div>
       </div>
 
-      {canClaim && <CommentSection submissionId={submission.id} />}
     </article>
+    {canClaim && <CommentSection submissionId={submission.id} />}
+    </>
   )
 }
