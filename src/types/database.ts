@@ -96,6 +96,29 @@ export interface Database {
           created_at?: string
         }
       }
+      submission_comments: {
+        Row: {
+          id: string
+          submission_id: string
+          user_id: string
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          submission_id: string
+          user_id: string
+          content: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          submission_id?: string
+          user_id?: string
+          content?: string
+          created_at?: string
+        }
+      }
     }
   }
 }
@@ -103,6 +126,7 @@ export interface Database {
 export type Prompt = Database['public']['Tables']['prompts']['Row']
 export type Submission = Database['public']['Tables']['submissions']['Row']
 export type Vote = Database['public']['Tables']['votes']['Row']
+export type SubmissionComment = Database['public']['Tables']['submission_comments']['Row']
 
 export type PromptPhase = 'upcoming' | 'writing' | 'voting' | 'results'
 

@@ -1,6 +1,7 @@
 import { SubmissionWithVotes } from '@/types/database'
 import VoteButton from './VoteButton'
 import ClaimButton from './ClaimButton'
+import CommentSection from './CommentSection'
 
 interface SubmissionCardProps {
   submission: SubmissionWithVotes
@@ -101,6 +102,8 @@ export default function SubmissionCard({
           )}
         </div>
       </div>
+
+      {canClaim && <CommentSection submissionId={submission.id} />}
     </article>
   )
 }
