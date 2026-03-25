@@ -3,6 +3,7 @@ import { getPromptPhase } from '@/lib/utils'
 import SubmissionCard from '@/components/SubmissionCard'
 import Link from 'next/link'
 import { Prompt, SubmissionWithVotes } from '@/types/database'
+import PromptBadges from '@/components/PromptBadges'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
@@ -128,6 +129,9 @@ export default async function ResultsPage() {
           <p className="text-zinc-600 dark:text-zinc-400 mt-2">
             {prompt.description}
           </p>
+          <div className="mt-3">
+            <PromptBadges object={prompt.object} location={prompt.location} />
+          </div>
         </div>
 
         {winners.length > 0 && (

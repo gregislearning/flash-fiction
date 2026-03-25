@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import SubmissionForm from '@/components/SubmissionForm'
 import Link from 'next/link'
 import { Prompt, Submission } from '@/types/database'
+import PromptBadges from '@/components/PromptBadges'
 
 export const dynamic = 'force-dynamic'
 
@@ -114,6 +115,9 @@ export default async function SubmitPage() {
           <p className="text-zinc-600 dark:text-zinc-400">
             {prompt.description}
           </p>
+          <div className="mt-3">
+            <PromptBadges object={prompt.object} location={prompt.location} />
+          </div>
         </div>
 
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 border border-zinc-200 dark:border-zinc-800">

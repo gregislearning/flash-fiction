@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import SubmissionCard from '@/components/SubmissionCard'
 import Link from 'next/link'
 import { Prompt, Submission, SubmissionWithVotes } from '@/types/database'
+import PromptBadges from '@/components/PromptBadges'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 30 // Revalidate every 30 seconds
@@ -168,6 +169,9 @@ export default async function SubmissionsPage() {
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
             {prompt.title}
           </h2>
+          <div className="mt-3">
+            <PromptBadges object={prompt.object} location={prompt.location} />
+          </div>
         </div>
 
         {submissions.length === 0 ? (

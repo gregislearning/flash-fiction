@@ -10,6 +10,8 @@ type PromptInsert = Database['public']['Tables']['prompts']['Insert']
 export default function AdminPromptForm() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [object, setObject] = useState('')
+  const [location, setLocation] = useState('')
   const [wordLimit, setWordLimit] = useState(300)
   const [submissionStart, setSubmissionStart] = useState('')
   const [submissionEnd, setSubmissionEnd] = useState('')
@@ -45,6 +47,8 @@ export default function AdminPromptForm() {
     const promptData: PromptInsert = {
       title,
       description,
+      object: object || null,
+      location: location || null,
       word_limit: wordLimit,
       submission_start: startDate.toISOString(),
       submission_end: endDate.toISOString(),
@@ -61,6 +65,8 @@ export default function AdminPromptForm() {
       setSuccess(true)
       setTitle('')
       setDescription('')
+      setObject('')
+      setLocation('')
       setWordLimit(300)
       setSubmissionStart('')
       setSubmissionEnd('')
@@ -125,6 +131,41 @@ export default function AdminPromptForm() {
           className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm"
           placeholder="Write a story about..."
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="object"
+            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+          >
+            Object
+          </label>
+          <input
+            id="object"
+            type="text"
+            value={object}
+            onChange={(e) => setObject(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm"
+            placeholder="e.g., a necklace"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="location"
+            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+          >
+            Location
+          </label>
+          <input
+            id="location"
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm"
+            placeholder="e.g., a nightclub"
+          />
+        </div>
       </div>
 
       <div>

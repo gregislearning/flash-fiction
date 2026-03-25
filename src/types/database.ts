@@ -18,6 +18,8 @@ export interface Database {
           submission_start: string
           submission_end: string
           voting_end: string
+          object: string | null
+          location: string | null
           created_at: string
         }
         Insert: {
@@ -28,6 +30,8 @@ export interface Database {
           submission_start: string
           submission_end: string
           voting_end: string
+          object?: string | null
+          location?: string | null
           created_at?: string
         }
         Update: {
@@ -38,6 +42,8 @@ export interface Database {
           submission_start?: string
           submission_end?: string
           voting_end?: string
+          object?: string | null
+          location?: string | null
           created_at?: string
         }
       }
