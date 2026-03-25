@@ -101,6 +101,7 @@ export interface Database {
           id: string
           submission_id: string
           user_id: string
+          author_email: string
           content: string
           created_at: string
         }
@@ -108,6 +109,7 @@ export interface Database {
           id?: string
           submission_id: string
           user_id: string
+          author_email: string
           content: string
           created_at?: string
         }
@@ -115,6 +117,7 @@ export interface Database {
           id?: string
           submission_id?: string
           user_id?: string
+          author_email?: string
           content?: string
           created_at?: string
         }

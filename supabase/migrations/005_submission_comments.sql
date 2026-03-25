@@ -3,6 +3,7 @@ CREATE TABLE submission_comments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   submission_id UUID NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_email TEXT NOT NULL,
   content TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
