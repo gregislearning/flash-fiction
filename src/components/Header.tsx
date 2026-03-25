@@ -9,6 +9,7 @@ import { User } from '@supabase/supabase-js'
 export default function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
   const router = useRouter()
   const supabase = createClient()
 
@@ -26,6 +27,28 @@ export default function Header() {
 
     return () => subscription.unsubscribe()
   }, [supabase.auth])
+
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      if (!user) {
+        setUnreadCount(0)
+        return
+      }
+
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('unread', true)
+
+      if (!error) {
+        setUnreadCount(count ?? 0)
+      }
+    }
+
+    loadUnreadCount()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -53,6 +76,17 @@ export default function Header() {
             <div className="w-20 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
           ) : user ? (
             <>
+              <Link
+                href="/notifications"
+                className="relative text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+              >
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin"

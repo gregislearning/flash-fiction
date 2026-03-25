@@ -128,6 +128,41 @@ export interface Database {
           created_at?: string
         }
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          submission_id: string
+          comment_id: string
+          message: string
+          comment_preview: string
+          unread: boolean
+          created_at: string
+          read_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          submission_id: string
+          comment_id: string
+          message: string
+          comment_preview: string
+          unread?: boolean
+          created_at?: string
+          read_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          submission_id?: string
+          comment_id?: string
+          message?: string
+          comment_preview?: string
+          unread?: boolean
+          created_at?: string
+          read_at?: string | null
+        }
+      }
     }
   }
 }
@@ -136,6 +171,7 @@ export type Prompt = Database['public']['Tables']['prompts']['Row']
 export type Submission = Database['public']['Tables']['submissions']['Row']
 export type Vote = Database['public']['Tables']['votes']['Row']
 export type SubmissionComment = Database['public']['Tables']['submission_comments']['Row']
+export type Notification = Database['public']['Tables']['notifications']['Row']
 
 export type PromptPhase = 'upcoming' | 'writing' | 'voting' | 'results'
 
