@@ -47,6 +47,24 @@ export default function Header() {
     }
 
     loadUnreadCount()
+
+    if (!user) return
+
+    const channel = supabase
+      .channel('header-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => { loadUnreadCount() }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
