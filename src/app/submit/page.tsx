@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentPrompt } from '@/lib/prompts'
 import { getPromptPhase } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import SubmissionForm from '@/components/SubmissionForm'
@@ -18,15 +19,7 @@ export default async function SubmitPage() {
     redirect('/auth/signin')
   }
 
-  // Get the current prompt
-  const { data: promptData } = await supabase
-    .from('prompts')
-    .select('*')
-    .order('submission_start', { ascending: false })
-    .limit(1)
-    .single()
-
-  const prompt = promptData as Prompt | null
+  const prompt = await getCurrentPrompt()
 
   if (!prompt) {
     return (

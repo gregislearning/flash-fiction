@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentPrompt } from '@/lib/prompts'
 import { sortSubmissionsForVotingPhase } from '@/lib/voting-submission-order'
 import { getPromptPhase } from '@/lib/utils'
 import { redirect } from 'next/navigation'
@@ -13,15 +14,7 @@ export const revalidate = 30 // Revalidate every 30 seconds
 async function getVotingData() {
   const supabase = await createClient()
 
-  // Get the current prompt
-  const { data: promptData } = await supabase
-    .from('prompts')
-    .select('*')
-    .order('submission_start', { ascending: false })
-    .limit(1)
-    .single()
-
-  const prompt = promptData as Prompt | null
+  const prompt = await getCurrentPrompt()
 
   if (!prompt) {
     return { prompt: null, phase: null, user: null, submissions: [], userVotedFor: [] }

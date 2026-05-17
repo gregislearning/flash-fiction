@@ -1,25 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentPrompt } from '@/lib/prompts'
 import { getPromptPhase } from '@/lib/utils'
 import PromptCard from '@/components/PromptCard'
 import Link from 'next/link'
-import { Prompt } from '@/types/database'
-
-export const dynamic = 'force-dynamic'
-export const revalidate = 60 // Revalidate every minute
-
-async function getCurrentPrompt(): Promise<Prompt | null> {
-  const supabase = await createClient()
-  
-  // Get the most recent prompt that has started or is about to start
-  const { data: prompt } = await supabase
-    .from('prompts')
-    .select('*')
-    .order('submission_start', { ascending: false })
-    .limit(1)
-    .single()
-
-  return prompt
-}
 
 async function getUserSubmission(promptId: string) {
   const supabase = await createClient()
