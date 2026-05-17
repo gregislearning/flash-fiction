@@ -46,6 +46,7 @@ export interface Database {
           location?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       submissions: {
         Row: {
@@ -78,6 +79,7 @@ export interface Database {
           author_email?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       votes: {
         Row: {
@@ -101,6 +103,7 @@ export interface Database {
           user_id?: string
           created_at?: string
         }
+        Relationships: []
       }
       submission_comments: {
         Row: {
@@ -127,6 +130,7 @@ export interface Database {
           content?: string
           created_at?: string
         }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -162,7 +166,14 @@ export interface Database {
           created_at?: string
           read_at?: string | null
         }
+        Relationships: []
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
     }
   }
 }

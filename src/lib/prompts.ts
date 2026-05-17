@@ -63,5 +63,5 @@ export async function getCurrentPrompt(): Promise<Prompt | null> {
     .limit(1)
     .maybeSingle()
 
-  return (upcoming as Prompt) || null
+  return upcoming ?? null
 }
