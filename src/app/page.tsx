@@ -4,6 +4,8 @@ import { getPromptPhase } from '@/lib/utils'
 import PromptCard from '@/components/PromptCard'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 async function getUserSubmission(promptId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

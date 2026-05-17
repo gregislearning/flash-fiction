@@ -31,12 +31,37 @@ export function selectCurrentPrompt(prompts: Prompt[]): Prompt | null {
 
 export async function getCurrentPrompt(): Promise<Prompt | null> {
   const supabase = await createClient()
+  const now = new Date().toISOString()
 
-  const { data } = await supabase
+  // Writing or voting: started, voting not over (ignores future scheduled prompts)
+  const { data: active } = await supabase
     .from('prompts')
     .select('*')
-    .order('submission_start', { ascending: false })
-    .limit(20)
+    .lte('submission_start', now)
+    .gt('voting_end', now)
 
-  return selectCurrentPrompt((data || []) as Prompt[])
+  const activePrompt = selectCurrentPrompt((active || []) as Prompt[])
+  if (activePrompt) return activePrompt
+
+  // Just finished — show results on home until the next round starts
+  const { data: recent } = await supabase
+    .from('prompts')
+    .select('*')
+    .lte('voting_end', now)
+    .order('voting_end', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (recent) return recent as Prompt
+
+  // Nothing in progress or recently ended — next scheduled prompt
+  const { data: upcoming } = await supabase
+    .from('prompts')
+    .select('*')
+    .gt('submission_start', now)
+    .order('submission_start', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  return (upcoming as Prompt) || null
 }
