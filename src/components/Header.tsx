@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { User } from '@supabase/supabase-js'
 import SearchBox from './SearchBox'
 
@@ -85,7 +85,9 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center gap-4">
-          <SearchBox />
+          <Suspense fallback={null}>
+            <SearchBox />
+          </Suspense>
           <Link
             href="/past"
             className="text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
