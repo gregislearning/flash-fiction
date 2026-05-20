@@ -173,7 +173,20 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_submissions: {
+        Args: { q: string; lim?: number }
+        Returns: {
+          id: string
+          prompt_id: string
+          prompt_title: string
+          prompt_phase: string
+          snippet: string
+          rank: number
+          claimed: boolean
+          author_email: string | null
+          created_at: string
+        }[]
+      }
     }
   }
 }
@@ -188,4 +201,16 @@ export type PromptPhase = 'upcoming' | 'writing' | 'voting' | 'results'
 
 export interface SubmissionWithVotes extends Submission {
   vote_count: number
+}
+
+export type SearchResult = {
+  id: string
+  prompt_id: string
+  prompt_title: string
+  prompt_phase: 'voting' | 'results'
+  snippet: string
+  rank: number
+  claimed: boolean
+  author_email: string | null
+  created_at: string
 }
