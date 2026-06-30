@@ -55,16 +55,17 @@ export default async function SearchPage({
             Enter a keyword in the search box above to find submissions.
           </p>
         ) : (
-          <Results query={query} base={base} />
+          <Results query={query} base={base} groupId={group.id} />
         )}
       </div>
     </main>
   )
 }
 
-async function Results({ query, base }: { query: string; base: string }) {
+async function Results({ query, base, groupId }: { query: string; base: string; groupId: string }) {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('search_submissions', {
+    p_group_id: groupId,
     q: query,
     lim: 50,
   })
