@@ -274,6 +274,40 @@ export interface Database {
           created_at: string
         }[]
       }
+      create_group: {
+        Args: { p_name: string; p_slug: string; p_admin_email: string }
+        Returns: { group_id: string; slug: string; admin_invite_token: string | null }
+      }
+      accept_invitation: {
+        Args: { p_token: string }
+        Returns: { group_slug: string; group_name: string }
+      }
+      get_invitation_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          group_name: string
+          group_slug: string
+          email: string
+          role: 'admin' | 'member'
+          accepted: boolean
+        } | null
+      }
+      my_pending_invitations: {
+        Args: Record<string, never>
+        Returns: { token: string; group_name: string; group_slug: string; role: 'admin' | 'member' }[]
+      }
+      claim_my_invitations: {
+        Args: Record<string, never>
+        Returns: number
+      }
+      is_group_admin: {
+        Args: { g: string; u: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { g: string; u: string }
+        Returns: boolean
+      }
     }
   }
 }

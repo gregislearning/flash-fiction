@@ -8,10 +8,13 @@ import { User } from '@supabase/supabase-js'
 import SearchBox from './SearchBox'
 import { groupSlugFromPathname } from '@/lib/utils'
 
+type SwitcherGroup = { id: string; name: string; slug: string; role: 'admin' | 'member' }
+
 export default function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [groups, setGroups] = useState<SwitcherGroup[]>([])
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -33,6 +36,32 @@ export default function Header() {
 
     return () => subscription.unsubscribe()
   }, [supabase.auth])
+
+  // The user's groups, for the switcher + the active-group admin link.
+  useEffect(() => {
+    const loadGroups = async () => {
+      if (!user) {
+        setGroups([])
+        return
+      }
+      const { data } = await supabase
+        .from('group_members')
+        .select('role, groups(id, name, slug)')
+        .eq('user_id', user.id)
+
+      const list = (data ?? [])
+        .map((row) => {
+          const r = row as unknown as { role: 'admin' | 'member'; groups: { id: string; name: string; slug: string } | null }
+          return r.groups ? { ...r.groups, role: r.role } : null
+        })
+        .filter((g): g is SwitcherGroup => g !== null)
+        .sort((a, b) => a.name.localeCompare(b.name))
+
+      setGroups(list)
+    }
+    loadGroups()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   useEffect(() => {
     const loadUnreadCount = async () => {
@@ -80,7 +109,10 @@ export default function Header() {
     router.refresh()
   }
 
-  const isAdmin = user?.user_metadata?.is_admin === true
+  const isSuperAdmin = user?.user_metadata?.is_admin === true
+  const activeGroupRole = groups.find((g) => g.slug === activeSlug)?.role
+  // Can manage the group currently in the URL (super-admin manages any).
+  const canManageActiveGroup = !!activeSlug && (isSuperAdmin || activeGroupRole === 'admin')
 
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -93,6 +125,19 @@ export default function Header() {
           <Suspense fallback={null}>
             <SearchBox />
           </Suspense>
+          {user && groups.length > 0 && (
+            <select
+              aria-label="Switch group"
+              value={activeSlug && groups.some((g) => g.slug === activeSlug) ? activeSlug : ''}
+              onChange={(e) => { if (e.target.value) router.push(`/g/${e.target.value}`) }}
+              className="text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-none focus:ring-2 focus:ring-zinc-400"
+            >
+              <option value="" disabled>Switch group…</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.slug}>{g.name}</option>
+              ))}
+            </select>
+          )}
           {activeSlug && (
             <Link
               href={`/g/${activeSlug}/past`}
@@ -116,12 +161,20 @@ export default function Header() {
                   </span>
                 )}
               </Link>
-              {isAdmin && (
+              {canManageActiveGroup && (
                 <Link
-                  href="/admin"
+                  href={`/g/${activeSlug}/admin`}
                   className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
                 >
-                  Admin
+                  Manage group
+                </Link>
+              )}
+              {isSuperAdmin && (
+                <Link
+                  href="/admin/groups"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                >
+                  Groups
                 </Link>
               )}
               <span className="text-sm text-zinc-500 dark:text-zinc-500 hidden sm:inline">
