@@ -2,21 +2,24 @@
 
 ## Groups PR2 — deferred verification (do before PR3 UI)
 
-### pgTAP RLS suite (the tenant-isolation gate)
-- **What:** The pgTAP suite under `supabase/tests/` that the scope makes the gate for
-  the membership/RLS work (migration `010`). Split out of PR2 because the dev machine
-  had no `supabase` CLI / Docker to run it in-session.
-- **Why it's P1, not optional:** PR2 rewrote every write-path policy to prompt-derived
-  membership but shipped **without** the automated proof that the cross-tenant **spoof
-  INSERT** (member of A referencing B's open `prompt_id`) fails-closed. Until this runs,
-  that boundary is verified only by the manual SQL check in `010`'s footer.
+### pgTAP RLS suite (the tenant-isolation gate) — ✅ DONE
+- **What:** The pgTAP suite under `supabase/tests/rls_groups_test.sql` that the scope
+  makes the gate for the membership/RLS work (migration `010`). Split out of PR2 because
+  the dev machine had no `supabase` CLI / Docker to run it in-session.
+- **Status:** Green — 19/19 assertions pass standalone via `supabase db reset &&
+  supabase test db`. The cross-tenant **spoof INSERT** (member of A referencing B's open
+  `prompt_id`) is confirmed to fail-closed.
 - **Coverage (1:1 with scope "Testing"):** 2 groups × {member, admin, non-member, anon}:
   member of A can't SELECT B's writing-phase rows but can see revealed ones; anon sees
   revealed only; member of A can't INSERT submissions/votes/comments into B; **spoof
   INSERT rejected**; group admin of A can't manage B's prompts, super-admin can; 
   `search_submissions(group_id)` never returns another group's or writing-phase rows.
 - **How:** install `supabase` CLI + start Docker → `supabase db reset` → `supabase test db`.
-- **Blocks:** PR3 (invites/admin UI) should not land until the spoof test is green.
+- **Note:** a fresh `db reset` of these migrations leaves anon/authenticated without DML
+  table grants (only `Dxtm`), so the suite grants the Supabase DML baseline at the top of
+  its (rolled-back) transaction to exercise the RLS policies. Worth confirming production
+  actually grants anon/authenticated SELECT/INSERT (vs. all reads/writes going through the
+  service role) — the migrations carry no `GRANT` statements.
 
 ### Middleware guard + admin route move (carried to PR3)
 - `010` rewrote prompts writes to `is_group_admin`, but the route guard for
