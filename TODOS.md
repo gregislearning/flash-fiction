@@ -1,5 +1,29 @@
 # TODOS
 
+## Groups PR2 — deferred verification (do before PR3 UI)
+
+### pgTAP RLS suite (the tenant-isolation gate)
+- **What:** The pgTAP suite under `supabase/tests/` that the scope makes the gate for
+  the membership/RLS work (migration `010`). Split out of PR2 because the dev machine
+  had no `supabase` CLI / Docker to run it in-session.
+- **Why it's P1, not optional:** PR2 rewrote every write-path policy to prompt-derived
+  membership but shipped **without** the automated proof that the cross-tenant **spoof
+  INSERT** (member of A referencing B's open `prompt_id`) fails-closed. Until this runs,
+  that boundary is verified only by the manual SQL check in `010`'s footer.
+- **Coverage (1:1 with scope "Testing"):** 2 groups × {member, admin, non-member, anon}:
+  member of A can't SELECT B's writing-phase rows but can see revealed ones; anon sees
+  revealed only; member of A can't INSERT submissions/votes/comments into B; **spoof
+  INSERT rejected**; group admin of A can't manage B's prompts, super-admin can; 
+  `search_submissions(group_id)` never returns another group's or writing-phase rows.
+- **How:** install `supabase` CLI + start Docker → `supabase db reset` → `supabase test db`.
+- **Blocks:** PR3 (invites/admin UI) should not land until the spoof test is green.
+
+### Middleware guard + admin route move (carried to PR3)
+- `010` rewrote prompts writes to `is_group_admin`, but the route guard for
+  `/g/[slug]/admin` and the `app/admin/* → app/g/[slug]/admin/*` move land in PR3 (that's
+  where those routes are created). The existing `/admin` super-admin guard still holds in
+  the interim; super-admins remain group admins via the `010` backfill.
+
 ## Groups feature — post-v1 follow-ups
 
 ### Vitest app-layer test coverage

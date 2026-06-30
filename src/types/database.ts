@@ -168,6 +168,7 @@ export interface Database {
           user_id: string
           submission_id: string
           comment_id: string
+          group_id: string
           message: string
           comment_preview: string
           unread: boolean
@@ -179,6 +180,7 @@ export interface Database {
           user_id: string
           submission_id: string
           comment_id: string
+          group_id: string
           message: string
           comment_preview: string
           unread?: boolean
@@ -190,11 +192,66 @@ export interface Database {
           user_id?: string
           submission_id?: string
           comment_id?: string
+          group_id?: string
           message?: string
           comment_preview?: string
           unread?: boolean
           created_at?: string
           read_at?: string | null
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          user_id: string
+          role: 'admin' | 'member'
+          created_at: string
+        }
+        Insert: {
+          group_id: string
+          user_id: string
+          role: 'admin' | 'member'
+          created_at?: string
+        }
+        Update: {
+          group_id?: string
+          user_id?: string
+          role?: 'admin' | 'member'
+          created_at?: string
+        }
+        Relationships: []
+      }
+      group_invitations: {
+        Row: {
+          id: string
+          group_id: string
+          email: string
+          role: 'admin' | 'member'
+          invited_by: string | null
+          token: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          email: string
+          role?: 'admin' | 'member'
+          invited_by?: string | null
+          token?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          email?: string
+          role?: 'admin' | 'member'
+          invited_by?: string | null
+          token?: string
+          accepted_at?: string | null
+          created_at?: string
         }
         Relationships: []
       }
@@ -204,7 +261,7 @@ export interface Database {
     }
     Functions: {
       search_submissions: {
-        Args: { q: string; lim?: number }
+        Args: { p_group_id: string; q: string; lim?: number }
         Returns: {
           id: string
           prompt_id: string
@@ -222,6 +279,8 @@ export interface Database {
 }
 
 export type Group = Database['public']['Tables']['groups']['Row']
+export type GroupMember = Database['public']['Tables']['group_members']['Row']
+export type GroupInvitation = Database['public']['Tables']['group_invitations']['Row']
 export type Prompt = Database['public']['Tables']['prompts']['Row']
 export type Submission = Database['public']['Tables']['submissions']['Row']
 export type Vote = Database['public']['Tables']['votes']['Row']
