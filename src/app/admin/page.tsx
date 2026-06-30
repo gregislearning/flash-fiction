@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AdminPromptForm from '@/components/AdminPromptForm'
 import AdminPromptList from '@/components/AdminPromptList'
+import { getDefaultGroup } from '@/lib/groups'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,10 @@ export default async function AdminPage() {
   if (!isAdmin) {
     redirect('/')
   }
+
+  // PR1: single-group admin — new prompts go to the default group.
+  // PR3 moves admin under /g/[slug]/admin and scopes this to the route's group.
+  const defaultGroup = await getDefaultGroup()
 
   // Get all prompts
   const { data: prompts } = await supabase
@@ -44,7 +49,13 @@ export default async function AdminPage() {
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-6">
               Create New Prompt
             </h2>
-            <AdminPromptForm />
+            {defaultGroup ? (
+              <AdminPromptForm groupId={defaultGroup.id} />
+            ) : (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                No group found — run migration 009 to create the default group.
+              </p>
+            )}
           </div>
 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 border border-zinc-200 dark:border-zinc-800">

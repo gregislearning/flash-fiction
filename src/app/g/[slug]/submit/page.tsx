@@ -1,25 +1,31 @@
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentPrompt } from '@/lib/prompts'
+import { getGroupBySlug } from '@/lib/groups'
 import { getPromptPhase } from '@/lib/utils'
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import SubmissionForm from '@/components/SubmissionForm'
 import Link from 'next/link'
-import { Prompt, Submission } from '@/types/database'
+import { Submission } from '@/types/database'
 import PromptBadges from '@/components/PromptBadges'
 
 export const dynamic = 'force-dynamic'
 
-export default async function SubmitPage() {
+export default async function SubmitPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const group = await getGroupBySlug(slug)
+  if (!group) notFound()
+
+  const base = `/g/${slug}`
   const supabase = await createClient()
-  
+
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     redirect('/auth/signin')
   }
 
-  const prompt = await getCurrentPrompt()
+  const prompt = await getCurrentPrompt(group.id)
 
   if (!prompt) {
     return (
@@ -32,7 +38,7 @@ export default async function SubmitPage() {
             There&apos;s no prompt to write for at the moment.
           </p>
           <Link
-            href="/"
+            href={base}
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             Go back home
@@ -61,7 +67,7 @@ export default async function SubmitPage() {
               : 'Check out the results to see who won!'}
           </p>
           <Link
-            href="/"
+            href={base}
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             Go back home
@@ -86,7 +92,7 @@ export default async function SubmitPage() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
           <Link
-            href="/"
+            href={base}
             className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
           >
             &larr; Back to prompt
@@ -117,7 +123,7 @@ export default async function SubmitPage() {
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-6">
             {existingSubmission ? 'Edit Your Story' : 'Write Your Story'}
           </h2>
-          <SubmissionForm prompt={prompt} existingSubmission={existingSubmission} />
+          <SubmissionForm prompt={prompt} existingSubmission={existingSubmission} homeHref={base} />
         </div>
       </div>
     </main>

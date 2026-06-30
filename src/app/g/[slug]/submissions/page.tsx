@@ -1,20 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentPrompt } from '@/lib/prompts'
+import { getGroupBySlug } from '@/lib/groups'
 import { sortSubmissionsForVotingPhase } from '@/lib/voting-submission-order'
 import { getPromptPhase } from '@/lib/utils'
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import SubmissionCard from '@/components/SubmissionCard'
 import Link from 'next/link'
-import { Prompt, Submission, SubmissionWithVotes } from '@/types/database'
+import { Submission, SubmissionWithVotes } from '@/types/database'
 import PromptBadges from '@/components/PromptBadges'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 30 // Revalidate every 30 seconds
 
-async function getVotingData() {
+async function getVotingData(groupId: string) {
   const supabase = await createClient()
 
-  const prompt = await getCurrentPrompt()
+  const prompt = await getCurrentPrompt(groupId)
 
   if (!prompt) {
     return { prompt: null, phase: null, user: null, submissions: [], userVotedFor: [] }
@@ -74,8 +75,13 @@ async function getVotingData() {
   return { prompt, phase, user, submissions: submissionsWithVotes, userVotedFor }
 }
 
-export default async function SubmissionsPage() {
-  const { prompt, phase, user, submissions, userVotedFor } = await getVotingData()
+export default async function SubmissionsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const group = await getGroupBySlug(slug)
+  if (!group) notFound()
+
+  const base = `/g/${slug}`
+  const { prompt, phase, user, submissions, userVotedFor } = await getVotingData(group.id)
 
   if (!prompt) {
     return (
@@ -85,7 +91,7 @@ export default async function SubmissionsPage() {
             No Active Prompt
           </h1>
           <Link
-            href="/"
+            href={base}
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             Go back home
@@ -108,7 +114,7 @@ export default async function SubmissionsPage() {
               : 'The writing phase is still open. Come back when voting begins!'}
           </p>
           <Link
-            href="/"
+            href={base}
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             Go back home
@@ -119,7 +125,7 @@ export default async function SubmissionsPage() {
   }
 
   if (phase === 'results') {
-    redirect('/results')
+    redirect(`${base}/results`)
   }
 
   return (
@@ -127,7 +133,7 @@ export default async function SubmissionsPage() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <Link
-            href="/"
+            href={base}
             className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
           >
             &larr; Back to prompt

@@ -1,31 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
+import { getGroupBySlug } from '@/lib/groups'
 import { getPromptPhase } from '@/lib/utils'
 import Link from 'next/link'
 import { Prompt } from '@/types/database'
+import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
-async function getPastPrompts(): Promise<Prompt[]> {
+async function getPastPrompts(groupId: string): Promise<Prompt[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('prompts')
     .select('*')
+    .eq('group_id', groupId)
     .order('voting_end', { ascending: false })
 
   const prompts = (data || []) as Prompt[]
   return prompts.filter((p) => getPromptPhase(p) === 'results')
 }
 
-export default async function PastPage() {
-  const pastPrompts = await getPastPrompts()
+export default async function PastPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const group = await getGroupBySlug(slug)
+  if (!group) notFound()
+
+  const base = `/g/${slug}`
+  const pastPrompts = await getPastPrompts(group.id)
 
   return (
     <main className="min-h-[calc(100vh-65px)] py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <Link
-            href="/"
+            href={base}
             className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
           >
             &larr; Back to home
@@ -47,7 +55,7 @@ export default async function PastPage() {
               No past prompts yet. Check back after the first round ends!
             </p>
             <Link
-              href="/"
+              href={base}
               className="inline-block mt-4 text-blue-600 dark:text-blue-400 hover:underline"
             >
               Go to current prompt
@@ -58,7 +66,7 @@ export default async function PastPage() {
             {pastPrompts.map((prompt) => (
               <li key={prompt.id}>
                 <Link
-                  href={`/past/${prompt.id}`}
+                  href={`${base}/past/${prompt.id}`}
                   className="block bg-white dark:bg-zinc-900 rounded-2xl shadow-sm p-6 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition"
                 >
                   <div className="flex items-center gap-2 mb-2">

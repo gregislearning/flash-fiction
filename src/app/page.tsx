@@ -1,145 +1,45 @@
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentPrompt } from '@/lib/prompts'
-import { getPromptPhase } from '@/lib/utils'
-import PromptCard from '@/components/PromptCard'
+import { listListedGroups } from '@/lib/groups'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-async function getUserSubmission(promptId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) return null
-
-  const { data: submission } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('prompt_id', promptId)
-    .eq('user_id', user.id)
-    .single()
-
-  return submission
-}
-
-async function getUserVote(promptId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) return null
-
-  const { data: vote } = await supabase
-    .from('votes')
-    .select('*')
-    .eq('prompt_id', promptId)
-    .eq('user_id', user.id)
-    .single()
-
-  return vote
-}
-
-export default async function Home() {
-  const prompt = await getCurrentPrompt()
-
-  if (!prompt) {
-    return (
-      <main className="min-h-[calc(100vh-65px)] flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">
-            No Active Prompt
-          </h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Check back soon for the next flash fiction challenge!
-          </p>
-        </div>
-      </main>
-    )
-  }
-
-  const phase = getPromptPhase(prompt)
-  const userSubmission = await getUserSubmission(prompt.id)
-  const userVote = await getUserVote(prompt.id)
+export default async function DirectoryPage() {
+  const groups = await listListedGroups()
 
   return (
     <main className="min-h-[calc(100vh-65px)] py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
-            Current Challenge
+            Flash Fiction
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Write a short story based on the prompt below
+            Pick a group to read its prompt and submissions.
           </p>
         </div>
 
-        <PromptCard prompt={prompt} phase={phase} />
-
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-          {phase === 'upcoming' && (
-            <div className="text-center text-zinc-500 dark:text-zinc-400">
-              Writing begins soon. Get ready!
-            </div>
-          )}
-
-          {phase === 'writing' && (
-            <>
-              {userSubmission ? (
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-green-600 dark:text-green-400 font-medium">
-                    You&apos;ve submitted your story!
-                  </span>
-                  <Link
-                    href="/submit"
-                    className="px-6 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition font-medium"
-                  >
-                    Edit Submission
-                  </Link>
-                </div>
-              ) : (
+        {groups.length === 0 ? (
+          <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+            <p className="text-zinc-600 dark:text-zinc-400">
+              No groups yet. Check back soon!
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {groups.map((group) => (
+              <li key={group.id}>
                 <Link
-                  href="/submit"
-                  className="px-8 py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition font-medium text-lg text-center"
+                  href={`/g/${group.slug}`}
+                  className="block bg-white dark:bg-zinc-900 rounded-2xl shadow-sm p-6 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition"
                 >
-                  Start Writing
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+                    {group.name}
+                  </h2>
                 </Link>
-              )}
-            </>
-          )}
-
-          {phase === 'voting' && (
-            <>
-              {userVote ? (
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-purple-600 dark:text-purple-400 font-medium">
-                    You&apos;ve cast your vote!
-                  </span>
-                  <Link
-                    href="/submissions"
-                    className="px-6 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition font-medium"
-                  >
-                    View Submissions
-                  </Link>
-                </div>
-              ) : (
-                <Link
-                  href="/submissions"
-                  className="px-8 py-4 rounded-xl bg-purple-600 dark:bg-purple-500 text-white hover:bg-purple-700 dark:hover:bg-purple-600 transition font-medium text-lg text-center"
-                >
-                  Read &amp; Vote
-                </Link>
-              )}
-            </>
-          )}
-
-          {phase === 'results' && (
-            <Link
-              href="/results"
-              className="px-8 py-4 rounded-xl bg-amber-500 dark:bg-amber-400 text-white dark:text-zinc-900 hover:bg-amber-600 dark:hover:bg-amber-500 transition font-medium text-lg text-center"
-            >
-              View Results
-            </Link>
-          )}
-        </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
   )

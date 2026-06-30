@@ -1,18 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState, Suspense } from 'react'
 import { User } from '@supabase/supabase-js'
 import SearchBox from './SearchBox'
+import { groupSlugFromPathname } from '@/lib/utils'
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
+
+  // The group currently being viewed (null on the `/` directory and auth pages).
+  const activeSlug = groupSlugFromPathname(pathname)
 
   useEffect(() => {
     const getUser = async () => {
@@ -88,12 +93,14 @@ export default function Header() {
           <Suspense fallback={null}>
             <SearchBox />
           </Suspense>
-          <Link
-            href="/past"
-            className="text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-          >
-            Past Submissions
-          </Link>
+          {activeSlug && (
+            <Link
+              href={`/g/${activeSlug}/past`}
+              className="text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+            >
+              Past Submissions
+            </Link>
+          )}
           {loading ? (
             <div className="w-20 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
           ) : user ? (

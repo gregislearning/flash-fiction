@@ -7,7 +7,12 @@ import { Database } from '@/types/database'
 
 type PromptInsert = Database['public']['Tables']['prompts']['Insert']
 
-export default function AdminPromptForm() {
+interface AdminPromptFormProps {
+  /** Group the new prompt belongs to (prompts.group_id is NOT NULL). */
+  groupId: string
+}
+
+export default function AdminPromptForm({ groupId }: AdminPromptFormProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [object, setObject] = useState('')
@@ -45,6 +50,7 @@ export default function AdminPromptForm() {
     setLoading(true)
 
     const promptData: PromptInsert = {
+      group_id: groupId,
       title,
       description,
       object: object || null,

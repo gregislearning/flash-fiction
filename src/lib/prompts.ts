@@ -29,7 +29,11 @@ export function selectCurrentPrompt(prompts: Prompt[]): Prompt | null {
   })[0]
 }
 
-export async function getCurrentPrompt(): Promise<Prompt | null> {
+/**
+ * Pick the "current" prompt for a single group. Every query is scoped to
+ * `groupId` so each group runs its own independent round.
+ */
+export async function getCurrentPrompt(groupId: string): Promise<Prompt | null> {
   const supabase = await createClient()
   const now = new Date().toISOString()
 
@@ -37,6 +41,7 @@ export async function getCurrentPrompt(): Promise<Prompt | null> {
   const { data: active } = await supabase
     .from('prompts')
     .select('*')
+    .eq('group_id', groupId)
     .lte('submission_start', now)
     .gt('voting_end', now)
 
@@ -47,6 +52,7 @@ export async function getCurrentPrompt(): Promise<Prompt | null> {
   const { data: recent } = await supabase
     .from('prompts')
     .select('*')
+    .eq('group_id', groupId)
     .lte('voting_end', now)
     .order('voting_end', { ascending: false })
     .limit(1)
@@ -58,6 +64,7 @@ export async function getCurrentPrompt(): Promise<Prompt | null> {
   const { data: upcoming } = await supabase
     .from('prompts')
     .select('*')
+    .eq('group_id', groupId)
     .gt('submission_start', now)
     .order('submission_start', { ascending: true })
     .limit(1)
