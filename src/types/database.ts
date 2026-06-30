@@ -9,9 +9,37 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      groups: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          listed: boolean
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          listed?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          listed?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       prompts: {
         Row: {
           id: string
+          group_id: string
           title: string
           description: string
           word_limit: number
@@ -24,6 +52,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          group_id: string
           title: string
           description: string
           word_limit: number
@@ -36,6 +65,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          group_id?: string
           title?: string
           description?: string
           word_limit?: number
@@ -191,6 +221,7 @@ export interface Database {
   }
 }
 
+export type Group = Database['public']['Tables']['groups']['Row']
 export type Prompt = Database['public']['Tables']['prompts']['Row']
 export type Submission = Database['public']['Tables']['submissions']['Row']
 export type Vote = Database['public']['Tables']['votes']['Row']

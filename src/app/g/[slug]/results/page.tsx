@@ -1,20 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
+import { getGroupBySlug } from '@/lib/groups'
 import { getPromptPhase } from '@/lib/utils'
 import SubmissionCard from '@/components/SubmissionCard'
 import Link from 'next/link'
 import { Prompt, SubmissionWithVotes } from '@/types/database'
 import PromptBadges from '@/components/PromptBadges'
+import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
-async function getResultsData() {
+async function getResultsData(groupId: string) {
   const supabase = await createClient()
 
-  // Get the most recent prompt that has ended voting
+  // Get the most recent prompt in this group that has ended voting
   const { data: prompts } = await supabase
     .from('prompts')
     .select('*')
+    .eq('group_id', groupId)
     .order('voting_end', { ascending: false })
 
   const prompt = (prompts || []).find((p) => getPromptPhase(p) === 'results') as Prompt | undefined
@@ -72,8 +75,13 @@ async function getResultsData() {
   return { prompt, user, submissionsWithVotes, winners }
 }
 
-export default async function ResultsPage() {
-  const { prompt, user, submissionsWithVotes, winners } = await getResultsData()
+export default async function ResultsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const group = await getGroupBySlug(slug)
+  if (!group) notFound()
+
+  const base = `/g/${slug}`
+  const { prompt, user, submissionsWithVotes, winners } = await getResultsData(group.id)
 
   if (!prompt) {
     return (
@@ -86,7 +94,7 @@ export default async function ResultsPage() {
             Check back after the voting phase ends!
           </p>
           <Link
-            href="/"
+            href={base}
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             Go back home
@@ -101,7 +109,7 @@ export default async function ResultsPage() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <Link
-            href="/"
+            href={base}
             className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
           >
             &larr; Back to home

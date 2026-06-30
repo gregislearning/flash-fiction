@@ -12,6 +12,16 @@ export function getPromptPhase(prompt: Prompt): PromptPhase {
   return 'results'
 }
 
+/**
+ * Extract the active group slug from a pathname like `/g/<slug>/submit`.
+ * Returns null on routes that aren't group-scoped (e.g. the `/` directory,
+ * `/auth/*`, `/admin`). Client-safe — used by Header and SearchBox.
+ */
+export function groupSlugFromPathname(pathname: string): string | null {
+  const match = pathname.match(/^\/g\/([^/]+)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 export function countWords(text: string): number {
   return text
     .trim()

@@ -1,12 +1,17 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { groupSlugFromPathname } from '@/lib/utils'
 
 export default function SearchBox() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [q, setQ] = useState('')
+
+  // Search is scoped to the group you're currently viewing.
+  const slug = groupSlugFromPathname(pathname)
 
   // Keep input synced with URL on back/forward navigation
   useEffect(() => {
@@ -16,9 +21,12 @@ export default function SearchBox() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = q.trim()
-    if (!trimmed) return
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
+    if (!trimmed || !slug) return
+    router.push(`/g/${slug}/search?q=${encodeURIComponent(trimmed)}`)
   }
+
+  // No active group (e.g. the directory) → nothing to search yet.
+  if (!slug) return null
 
   return (
     <form onSubmit={onSubmit} className="hidden sm:block">

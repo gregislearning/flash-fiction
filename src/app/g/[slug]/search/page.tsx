@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { getGroupBySlug } from '@/lib/groups'
 import { SearchResult } from '@/types/database'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,10 +20,17 @@ function renderSnippet(raw: string): string {
 }
 
 export default async function SearchPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ slug: string }>
   searchParams: Promise<{ q?: string }>
 }) {
+  const { slug } = await params
+  const group = await getGroupBySlug(slug)
+  if (!group) notFound()
+
+  const base = `/g/${slug}`
   const { q } = await searchParams
   const query = (q ?? '').trim()
 
@@ -30,7 +39,7 @@ export default async function SearchPage({
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <Link
-            href="/"
+            href={base}
             className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
           >
             &larr; Back to home
@@ -46,14 +55,14 @@ export default async function SearchPage({
             Enter a keyword in the search box above to find submissions.
           </p>
         ) : (
-          <Results query={query} />
+          <Results query={query} base={base} />
         )}
       </div>
     </main>
   )
 }
 
-async function Results({ query }: { query: string }) {
+async function Results({ query, base }: { query: string; base: string }) {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('search_submissions', {
     q: query,
@@ -91,7 +100,7 @@ async function Results({ query }: { query: string }) {
             className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm p-6 border border-zinc-200 dark:border-zinc-800"
           >
             <Link
-              href={`/past/${r.prompt_id}`}
+              href={`${base}/past/${r.prompt_id}`}
               className="text-lg font-bold text-zinc-900 dark:text-white hover:underline"
             >
               {r.prompt_title}

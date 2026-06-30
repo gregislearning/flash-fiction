@@ -9,9 +9,11 @@ import { Prompt, Submission } from '@/types/database'
 interface SubmissionFormProps {
   prompt: Prompt
   existingSubmission: Submission | null
+  /** Group home to return to after submit/delete, e.g. `/g/flash-fiction`. */
+  homeHref: string
 }
 
-export default function SubmissionForm({ prompt, existingSubmission }: SubmissionFormProps) {
+export default function SubmissionForm({ prompt, existingSubmission, homeHref }: SubmissionFormProps) {
   const [content, setContent] = useState(existingSubmission?.content || '')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -85,7 +87,7 @@ export default function SubmissionForm({ prompt, existingSubmission }: Submissio
         setError(error.message)
         setLoading(false)
       } else {
-        router.push('/')
+        router.push(homeHref)
         router.refresh()
       }
     }
@@ -109,7 +111,7 @@ export default function SubmissionForm({ prompt, existingSubmission }: Submissio
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/')
+      router.push(homeHref)
       router.refresh()
     }
   }

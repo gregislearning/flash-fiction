@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getGroupBySlug } from '@/lib/groups'
 import { getPromptPhase } from '@/lib/utils'
 import SubmissionCard from '@/components/SubmissionCard'
 import Link from 'next/link'
@@ -9,13 +10,14 @@ import PromptBadges from '@/components/PromptBadges'
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
-async function getPastPromptData(promptId: string) {
+async function getPastPromptData(promptId: string, groupId: string) {
   const supabase = await createClient()
 
   const { data: promptData } = await supabase
     .from('prompts')
     .select('*')
     .eq('id', promptId)
+    .eq('group_id', groupId)
     .single()
 
   const prompt = promptData as Prompt | null
@@ -71,10 +73,14 @@ async function getPastPromptData(promptId: string) {
 export default async function PastPromptPage({
   params,
 }: {
-  params: Promise<{ promptId: string }>
+  params: Promise<{ slug: string; promptId: string }>
 }) {
-  const { promptId } = await params
-  const data = await getPastPromptData(promptId)
+  const { slug, promptId } = await params
+  const group = await getGroupBySlug(slug)
+  if (!group) notFound()
+
+  const base = `/g/${slug}`
+  const data = await getPastPromptData(promptId, group.id)
 
   if (!data) {
     notFound()
@@ -87,7 +93,7 @@ export default async function PastPromptPage({
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <Link
-            href="/past"
+            href={`${base}/past`}
             className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
           >
             &larr; Back to past submissions
