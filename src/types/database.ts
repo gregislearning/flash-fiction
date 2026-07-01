@@ -308,6 +308,10 @@ export interface Database {
         Args: { g: string; u: string }
         Returns: boolean
       }
+      get_group_members: {
+        Args: { p_group_id: string }
+        Returns: { user_id: string; email: string; role: 'admin' | 'member'; joined_at: string }[]
+      }
     }
   }
 }

@@ -198,3 +198,17 @@ export async function getMyPendingInvitations(): Promise<PendingInvitation[]> {
   return ((data as { token: string; group_name: string; group_slug: string; role: GroupRole }[] | null) ?? [])
     .map((r) => ({ token: r.token, groupName: r.group_name, groupSlug: r.group_slug, role: r.role }))
 }
+
+export type GroupMember = { userId: string; email: string; role: GroupRole; joinedAt: string }
+
+/**
+ * A group's member roster (email + role), for the group-admin UI. Returns rows
+ * only when the caller is a group admin / super-admin (gated in the DB function,
+ * which also crosses the auth.users email boundary via SECURITY DEFINER).
+ */
+export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
+  const supabase = await createClient()
+  const { data } = await supabase.rpc('get_group_members', { p_group_id: groupId })
+  return ((data as { user_id: string; email: string; role: GroupRole; joined_at: string }[] | null) ?? [])
+    .map((r) => ({ userId: r.user_id, email: r.email, role: r.role, joinedAt: r.joined_at }))
+}
