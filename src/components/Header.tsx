@@ -60,8 +60,11 @@ export default function Header() {
       setGroups(list)
     }
     loadGroups()
+    // Re-fetch on navigation too: joining a group (invite accept) changes
+    // membership without changing user.id, so key on the path to keep the
+    // switcher fresh once the user lands in the newly-joined group.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
+  }, [user?.id, pathname])
 
   useEffect(() => {
     const loadUnreadCount = async () => {
