@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentPrompt } from '@/lib/prompts'
-import { getGroupBySlug } from '@/lib/groups'
+import { getGroupBySlug, isGroupMember, getMyPendingInvitations } from '@/lib/groups'
 import { getPromptPhase } from '@/lib/utils'
 import { redirect, notFound } from 'next/navigation'
 import SubmissionForm from '@/components/SubmissionForm'
+import AcceptInviteButton from '@/components/AcceptInviteButton'
 import Link from 'next/link'
 import { Submission } from '@/types/database'
 import PromptBadges from '@/components/PromptBadges'
@@ -23,6 +24,42 @@ export default async function SubmitPage({ params }: { params: Promise<{ slug: s
 
   if (!user) {
     redirect('/auth/signin')
+  }
+
+  // Public-read, membership-gated write: a non-member can view the group but
+  // can't submit (RLS blocks the insert). Stop here with a read-only state
+  // instead of handing them a form that fails on submit. Surface an "Accept
+  // invitation" button when a pending invite to this group matches their email.
+  if (!(await isGroupMember(group.id))) {
+    const pending = (await getMyPendingInvitations()).find((inv) => inv.groupSlug === slug)
+    return (
+      <main className="min-h-[calc(100vh-65px)] flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 border border-zinc-200 dark:border-zinc-800">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 mb-4">
+            Read only
+          </span>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+            You&apos;re not a member of {group.name}
+          </h1>
+          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+            You can read this group&apos;s prompts and stories, but only members can submit.
+            {pending ? ' You have a pending invitation — accept it to start writing.' : ' Ask an admin to invite you.'}
+          </p>
+          {pending ? (
+            <div className="flex justify-center">
+              <AcceptInviteButton token={pending.token} groupSlug={slug} />
+            </div>
+          ) : (
+            <Link
+              href={base}
+              className="inline-block px-6 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition font-medium"
+            >
+              Back to {group.name}
+            </Link>
+          )}
+        </div>
+      </main>
+    )
   }
 
   const prompt = await getCurrentPrompt(group.id)
