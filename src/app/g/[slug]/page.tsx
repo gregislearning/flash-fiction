@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentPrompt } from '@/lib/prompts'
-import { getGroupBySlug } from '@/lib/groups'
+import { getGroupBySlug, isGroupMember } from '@/lib/groups'
 import { getPromptPhase } from '@/lib/utils'
 import PromptCard from '@/components/PromptCard'
+import AccessBadge from '@/components/AccessBadge'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -46,15 +47,19 @@ export default async function Home({ params }: { params: Promise<{ slug: string 
   if (!group) notFound()
 
   const base = `/g/${slug}`
+  const canWrite = await isGroupMember(group.id)
   const prompt = await getCurrentPrompt(group.id)
 
   if (!prompt) {
     return (
       <main className="min-h-[calc(100vh-65px)] flex items-center justify-center px-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">
-            No Active Prompt
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+              No Active Prompt
+            </h1>
+            <AccessBadge canWrite={canWrite} />
+          </div>
           <p className="text-zinc-600 dark:text-zinc-400">
             Check back soon for the next flash fiction challenge!
           </p>
@@ -71,11 +76,16 @@ export default async function Home({ params }: { params: Promise<{ slug: string 
     <main className="min-h-[calc(100vh-65px)] py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
-            Current Challenge
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+              Current Challenge
+            </h1>
+            <AccessBadge canWrite={canWrite} />
+          </div>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Write a short story based on the prompt below
+            {canWrite
+              ? 'Write a short story based on the prompt below'
+              : 'You can read this group. Members can write, vote, and comment.'}
           </p>
         </div>
 
@@ -88,7 +98,13 @@ export default async function Home({ params }: { params: Promise<{ slug: string 
             </div>
           )}
 
-          {phase === 'writing' && (
+          {phase === 'writing' && !canWrite && (
+            <div className="text-center text-zinc-500 dark:text-zinc-400">
+              Members can submit a story. Ask an admin to invite you.
+            </div>
+          )}
+
+          {phase === 'writing' && canWrite && (
             <>
               {userSubmission ? (
                 <div className="flex flex-col items-center gap-2">

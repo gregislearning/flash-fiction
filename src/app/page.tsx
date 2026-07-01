@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { listListedGroups, getUserGroups, getMyPendingInvitations } from '@/lib/groups'
 import PendingInvitesBanner from '@/components/PendingInvitesBanner'
+import AccessBadge from '@/components/AccessBadge'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,8 @@ export default async function DirectoryPage() {
     ? await Promise.all([getMyPendingInvitations(), getUserGroups()])
     : [[], []]
   const showNoGroupHint = !!user && myGroups.length === 0 && pendingInvitations.length === 0
+  // Membership gates participation — a group the user belongs to is read+write.
+  const memberGroupIds = new Set(myGroups.map((g) => g.id))
 
   return (
     <main className="min-h-[calc(100vh-65px)] py-12 px-4">
@@ -52,9 +55,12 @@ export default async function DirectoryPage() {
                   href={`/g/${group.slug}`}
                   className="block bg-white dark:bg-zinc-900 rounded-2xl shadow-sm p-6 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition"
                 >
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-                    {group.name}
-                  </h2>
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+                      {group.name}
+                    </h2>
+                    <AccessBadge canWrite={memberGroupIds.has(group.id)} />
+                  </div>
                 </Link>
               </li>
             ))}
