@@ -32,19 +32,47 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  const { pathname } = request.nextUrl
+
+  // Cross-group super-admin surface (group creation) — site-wide is_admin only.
+  const isSuperAdminRoute = pathname.startsWith('/admin')
+
+  // Per-group admin surface (prompt management + invites) — the group admin of
+  // that slug OR a super-admin. The slug is in the path, so the guard can
+  // authorize against it via the same is_group_admin the DB RLS uses.
+  const groupAdminMatch = pathname.match(/^\/g\/([^/]+)\/admin(?:\/|$)/)
+
+  if (isSuperAdminRoute || groupAdminMatch) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/auth/signin'
       return NextResponse.redirect(url)
     }
 
-    // Check if user is admin
-    const isAdmin = user.user_metadata?.is_admin === true
-    if (!isAdmin) {
+    const isSuperAdmin = user.user_metadata?.is_admin === true
+    let authorized = isSuperAdmin
+
+    if (!authorized && groupAdminMatch) {
+      // Resolve slug → group id, then defer to is_group_admin (membership role).
+      const slug = decodeURIComponent(groupAdminMatch[1])
+      const { data: group } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('slug', slug)
+        .maybeSingle()
+
+      if (group) {
+        const { data: isAdmin } = await supabase.rpc('is_group_admin', {
+          g: group.id,
+          u: user.id,
+        })
+        authorized = isAdmin === true
+      }
+    }
+
+    if (!authorized) {
       const url = request.nextUrl.clone()
-      url.pathname = '/'
+      url.pathname = groupAdminMatch ? `/g/${decodeURIComponent(groupAdminMatch[1])}` : '/'
       return NextResponse.redirect(url)
     }
   }

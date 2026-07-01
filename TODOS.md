@@ -21,11 +21,24 @@
   actually grants anon/authenticated SELECT/INSERT (vs. all reads/writes going through the
   service role) — the migrations carry no `GRANT` statements.
 
-### Middleware guard + admin route move (carried to PR3)
-- `010` rewrote prompts writes to `is_group_admin`, but the route guard for
-  `/g/[slug]/admin` and the `app/admin/* → app/g/[slug]/admin/*` move land in PR3 (that's
-  where those routes are created). The existing `/admin` super-admin guard still holds in
-  the interim; super-admins remain group admins via the `010` backfill.
+### Middleware guard + admin route move (carried to PR3) — ✅ DONE
+- PR3 moved `app/admin/*` prompt management to `app/g/[slug]/admin/*` (scoped to the
+  route's group) and added the middleware guard: `/g/[slug]/admin` allows the group admin
+  of that slug OR a super-admin (via the same `is_group_admin` the DB RLS uses);
+  `/admin/groups` stays super-admin only. Flat `/admin` now redirects to `/admin/groups`.
+
+## Groups PR3 — shipped
+- Migration `011`: SECURITY DEFINER `create_group` (super-admin; existing-account admin →
+  membership, else admin invitation), `accept_invitation` (verified-email + email-match
+  gated, idempotent), `claim_my_invitations` (callback bulk auto-claim), `get_invitation_by_token`
+  + `my_pending_invitations` (read paths for invitees who can't SELECT invitations),
+  `is_super_admin`, and `group_invitations` admin-manage policies.
+- App: `/admin/groups` (create group + name first admin), `/g/[slug]/admin` (prompt mgmt +
+  invite-by-email with copy/paste links), `/invite/[token]` accept flow, callback auto-claim,
+  pending-invite-aware empty state on `/`, and a group switcher in `Header.tsx`.
+- Verified: tsc clean, `next build` green, pgTAP suite still 19/19, and all `011` functions
+  exercised against a local reset (create→invite→register→claim, verified-email gate,
+  idempotency, both create_group branches).
 
 ## Groups feature — post-v1 follow-ups
 

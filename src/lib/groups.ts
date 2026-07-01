@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Group } from '@/types/database'
+import { Group, GroupInvitation } from '@/types/database'
 
 /**
  * Group resolution + membership guards — the single place the app turns a URL
@@ -99,4 +99,102 @@ export async function requireMembership(group: Group): Promise<GroupRole | null>
  */
 export async function requireGroupAdmin(group: Group): Promise<boolean> {
   return isGroupAdmin(group.id)
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// PR3: group management, invites, and the membership write path.
+// Membership/group writes that RLS blocks for the caller go through the
+// migration 011 SECURITY DEFINER functions (create_group / accept_invitation /
+// claim_my_invitations / my_pending_invitations); admin-managed invitation rows
+// go through ordinary RLS (the group_invitations admin policies).
+// ───────────────────────────────────────────────────────────────────────────
+
+/** The groups the current user belongs to — powers the Header switcher. */
+export async function getUserGroups(): Promise<Pick<Group, 'id' | 'name' | 'slug'>[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('group_members')
+    .select('groups(id, name, slug)')
+    .eq('user_id', user.id)
+
+  const groups = (data ?? [])
+    .map((row) => (row as unknown as { groups: Pick<Group, 'id' | 'name' | 'slug'> | null }).groups)
+    .filter((g): g is Pick<Group, 'id' | 'name' | 'slug'> => g !== null)
+
+  return groups.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export type CreateGroupResult = { slug: string; adminInviteToken: string | null }
+
+/**
+ * Super-admin only (enforced in the DB function). Creates a group and assigns
+ * its first admin by email — an existing account becomes an admin member,
+ * otherwise an admin invitation is created and its token returned so the caller
+ * can surface the copy/paste accept link.
+ */
+export async function createGroup(
+  name: string,
+  slug: string,
+  adminEmail: string
+): Promise<CreateGroupResult> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('create_group', {
+    p_name: name,
+    p_slug: slug,
+    p_admin_email: adminEmail,
+  })
+  if (error) throw new Error(error.message)
+  const result = data as { slug: string; admin_invite_token: string | null }
+  return { slug: result.slug, adminInviteToken: result.admin_invite_token }
+}
+
+/** Open (unaccepted) invitations for a group — group-admin view. */
+export async function listGroupInvitations(groupId: string): Promise<GroupInvitation[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('group_invitations')
+    .select('*')
+    .eq('group_id', groupId)
+    .is('accepted_at', null)
+    .order('created_at', { ascending: false })
+
+  return (data as GroupInvitation[] | null) ?? []
+}
+
+export type InvitationView = {
+  groupName: string
+  groupSlug: string
+  email: string
+  role: GroupRole
+  accepted: boolean
+}
+
+/** Public invite details for the /invite/[token] accept page (or null). */
+export async function getInvitationByToken(token: string): Promise<InvitationView | null> {
+  const supabase = await createClient()
+  const { data } = await supabase.rpc('get_invitation_by_token', { p_token: token })
+  if (!data) return null
+  const r = data as {
+    group_name: string; group_slug: string; email: string; role: GroupRole; accepted: boolean
+  }
+  return {
+    groupName: r.group_name,
+    groupSlug: r.group_slug,
+    email: r.email,
+    role: r.role,
+    accepted: r.accepted,
+  }
+}
+
+export type PendingInvitation = { token: string; groupName: string; groupSlug: string; role: GroupRole }
+
+/** Invitations awaiting the current (verified) user — powers the empty state. */
+export async function getMyPendingInvitations(): Promise<PendingInvitation[]> {
+  const supabase = await createClient()
+  const { data } = await supabase.rpc('my_pending_invitations')
+  return ((data as { token: string; group_name: string; group_slug: string; role: GroupRole }[] | null) ?? [])
+    .map((r) => ({ token: r.token, groupName: r.group_name, groupSlug: r.group_slug, role: r.role }))
 }

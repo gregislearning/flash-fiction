@@ -28,6 +28,17 @@ export async function GET(request: NextRequest) {
     )
 
     await supabase.auth.exchangeCodeForSession(code)
+
+    // Belt-and-suspenders invite auto-claim: now that the email is verified,
+    // join the user to any group they have an open invite for. Idempotent and
+    // verified-email-gated in the DB (claim_my_invitations). Fail soft — a claim
+    // hiccup must never block sign-in; the empty-state "Accept" button backstops.
+    try {
+      await supabase.rpc('claim_my_invitations')
+    } catch {
+      // ignore — membership can still be claimed from the invite link / empty state
+    }
+
     return supabaseResponse
   }
 
