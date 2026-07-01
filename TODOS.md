@@ -64,5 +64,8 @@
 - Private groups (view restricted to members) — `groups.listed`/public-read shipped; the
   member-only-view gate on SELECT is the later addition.
 - Remove/leave-group UI — super-admin handles membership exits in the DB for v1.
+  (Update: the group-admin **member roster** now ships — view-only, migration `012`
+  `get_group_members`. Managing members from the UI — promote/demote role, remove —
+  is the remaining piece; it needs group_members UPDATE/DELETE policies, still absent.)
 - Global labeled notification bell — v1 is active-group-only by decision; revisit if
   multi-group membership becomes common.
