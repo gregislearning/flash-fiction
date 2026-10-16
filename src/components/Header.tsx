@@ -22,6 +22,26 @@ export default function Header() {
   // The group currently being viewed (null on the `/` directory and auth pages).
   const activeSlug = groupSlugFromPathname(pathname)
 
+  // Mobile only: which drop-down panel under the header is open. One at a
+  // time, since the search bar and the hamburger menu share the same spot.
+  const [openPanel, setOpenPanel] = useState<'search' | 'menu' | null>(null)
+  const closePanels = () => setOpenPanel(null)
+
+  // Collapse any open panel when the user navigates elsewhere. Adjusting state
+  // during render (instead of in an effect) avoids an extra render pass.
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname)
+    setOpenPanel(null)
+  }
+
+  useEffect(() => {
+    if (!openPanel) return
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenPanel(null) }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [openPanel])
+
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -117,97 +137,208 @@ export default function Header() {
   // Can manage the group currently in the URL (super-admin manages any).
   const canManageActiveGroup = !!activeSlug && (isSuperAdmin || activeGroupRole === 'admin')
 
-  return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-      <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-zinc-900 dark:text-white">
-          Flash Fiction
-        </Link>
+  const groupSwitcher = (className: string) => (
+    <select
+      aria-label="Switch group"
+      value={activeSlug && groups.some((g) => g.slug === activeSlug) ? activeSlug : ''}
+      onChange={(e) => { if (e.target.value) router.push(`/g/${e.target.value}`) }}
+      className={`text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-none focus:ring-2 focus:ring-zinc-400 ${className}`}
+    >
+      <option value="" disabled>Switch group…</option>
+      {groups.map((g) => (
+        <option key={g.id} value={g.slug}>{g.name}</option>
+      ))}
+    </select>
+  )
 
-        <nav className="flex items-center gap-4">
-          <Suspense fallback={null}>
-            <SearchBox />
-          </Suspense>
-          {user && groups.length > 0 && (
-            <select
-              aria-label="Switch group"
-              value={activeSlug && groups.some((g) => g.slug === activeSlug) ? activeSlug : ''}
-              onChange={(e) => { if (e.target.value) router.push(`/g/${e.target.value}`) }}
-              className="text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-none focus:ring-2 focus:ring-zinc-400"
-            >
-              <option value="" disabled>Switch group…</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.slug}>{g.name}</option>
-              ))}
-            </select>
-          )}
-          {activeSlug && (
-            <Link
-              href={`/g/${activeSlug}/past`}
-              className="text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-            >
-              Past Submissions
-            </Link>
-          )}
-          {loading ? (
-            <div className="w-20 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
-          ) : user ? (
-            <>
-              <Link
-                href="/notifications"
-                className="relative text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-              >
-                Notifications
-                {unreadCount > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center border-2 border-white dark:border-zinc-900">
-                    {unreadCount}
+  const menuLinkClass =
+    'flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition'
+
+  return (
+    <>
+      {/* Mobile: tapping anywhere outside an open panel closes it. Sits below
+          the header (z-30) so header buttons stay tappable. */}
+      {openPanel && (
+        <div className="sm:hidden fixed inset-0 z-20" onClick={closePanels} aria-hidden />
+      )}
+      <header className="relative z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-zinc-900 dark:text-white">
+            Flash Fiction
+          </Link>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Suspense fallback={null}>
+              <SearchBox
+                mobileOpen={openPanel === 'search'}
+                onMobileOpenChange={(open) => setOpenPanel(open ? 'search' : null)}
+              />
+            </Suspense>
+
+            <nav className="hidden sm:flex items-center gap-4">
+              {user && groups.length > 0 && groupSwitcher('')}
+              {activeSlug && (
+                <Link
+                  href={`/g/${activeSlug}/past`}
+                  className="text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                >
+                  Past Submissions
+                </Link>
+              )}
+              {loading ? (
+                <div className="w-20 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+              ) : user ? (
+                <>
+                  <Link
+                    href="/notifications"
+                    className="relative text-sm font-medium px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                  >
+                    Notifications
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center border-2 border-white dark:border-zinc-900">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                  {canManageActiveGroup && (
+                    <Link
+                      href={`/g/${activeSlug}/admin`}
+                      className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                    >
+                      Manage group
+                    </Link>
+                  )}
+                  {isSuperAdmin && (
+                    <Link
+                      href="/admin/groups"
+                      className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                    >
+                      Groups
+                    </Link>
+                  )}
+                  <span className="text-sm text-zinc-500 dark:text-zinc-500">
+                    {user.email}
                   </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-sm px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/signin"
+                    className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className="text-sm px-4 py-2 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </nav>
+
+            {/* Mobile: everything in the desktop nav moves into this menu. */}
+            <button
+              type="button"
+              onClick={() => setOpenPanel(openPanel === 'menu' ? null : 'menu')}
+              aria-label={
+                openPanel === 'menu'
+                  ? 'Close menu'
+                  : unreadCount > 0 ? `Open menu (${unreadCount} unread notifications)` : 'Open menu'
+              }
+              aria-expanded={openPanel === 'menu'}
+              aria-controls="mobile-menu"
+              className="sm:hidden relative p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+            >
+              {openPanel === 'menu' ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+              {unreadCount > 0 && openPanel !== 'menu' && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500 border-2 border-white dark:border-zinc-900" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {openPanel === 'menu' && (
+          <div
+            id="mobile-menu"
+            className="sm:hidden absolute inset-x-0 top-full px-4 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shadow-sm"
+          >
+            {loading ? (
+              <div className="h-10 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+            ) : (
+              <nav className="flex flex-col gap-1">
+                {user && groups.length > 0 && groupSwitcher('w-full mb-2')}
+                {activeSlug && (
+                  <Link href={`/g/${activeSlug}/past`} onClick={closePanels} className={menuLinkClass}>
+                    Past Submissions
+                  </Link>
                 )}
-              </Link>
-              {canManageActiveGroup && (
-                <Link
-                  href={`/g/${activeSlug}/admin`}
-                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
-                >
-                  Manage group
-                </Link>
-              )}
-              {isSuperAdmin && (
-                <Link
-                  href="/admin/groups"
-                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
-                >
-                  Groups
-                </Link>
-              )}
-              <span className="text-sm text-zinc-500 dark:text-zinc-500 hidden sm:inline">
-                {user.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="text-sm px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/auth/signin"
-                className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="text-sm px-4 py-2 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition"
-              >
-                Sign Up
-              </Link>
-            </>
-          )}
-        </nav>
-      </div>
-    </header>
+                {user ? (
+                  <>
+                    <Link href="/notifications" onClick={closePanels} className={menuLinkClass}>
+                      Notifications
+                      {unreadCount > 0 && (
+                        <span className="min-w-5 h-5 px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                    {canManageActiveGroup && (
+                      <Link href={`/g/${activeSlug}/admin`} onClick={closePanels} className={menuLinkClass}>
+                        Manage group
+                      </Link>
+                    )}
+                    {isSuperAdmin && (
+                      <Link href="/admin/groups" onClick={closePanels} className={menuLinkClass}>
+                        Groups
+                      </Link>
+                    )}
+                    <div className="border-t border-zinc-200 dark:border-zinc-800 my-2" />
+                    <p className="px-3 py-1 text-xs text-zinc-500 dark:text-zinc-500 truncate">
+                      Signed in as {user.email}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { closePanels(); handleSignOut() }}
+                      className={`${menuLinkClass} text-left`}
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/auth/signin" onClick={closePanels} className={menuLinkClass}>
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      onClick={closePanels}
+                      className="mt-2 text-sm text-center px-4 py-2.5 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </nav>
+            )}
+          </div>
+        )}
+      </header>
+    </>
   )
 }
